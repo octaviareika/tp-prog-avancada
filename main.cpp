@@ -31,7 +31,8 @@ double dist(Point a, Point b){
 double orientation(Point a, Point b, Point c){
     double val = (b.y - a.y) * (c.x - b.x) - (b.x - a.x) * (c.y - b.y);
     if(fabs(val) < EPSILON) return 0; // considere que ele eh tao proximo de 0 que eh 0
-    return (val > 0) ? 1 : -1;
+    if (val > 0) return 1; // esquerda
+    return -1; // direita - anti-horario
 }
 
 bool on_segment(Point p, Point q, Point r){
@@ -50,4 +51,8 @@ bool segments_intersect(Segment p1, Segment q1){
     
     return false;
     
+}
+
+bool isInside(Point p, double R) {
+    return (p.x * p.x + p.y * p.y) <= (R * R);
 }
