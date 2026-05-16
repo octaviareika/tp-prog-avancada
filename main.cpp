@@ -56,3 +56,41 @@ bool segments_intersect(Segment p1, Segment q1){
 bool isInside(Point p, double R) {
     return (p.x * p.x + p.y * p.y) <= (R * R);
 }
+
+void coletarSegmentos(ptrNo raiz, std::vector<Segment> &segmentos){
+
+    if (!raiz) return;
+
+    if(raiz->esq) {
+        segmentos.push_back({raiz->p, raiz->esq->p});
+        coletarSegmentos(raiz->esq, segmentos);
+    }
+
+    if(raiz->dir) {
+        segmentos.push_back({raiz->p, raiz->dir->p});
+        coletarSegmentos(raiz->dir, segmentos);
+    }
+
+}
+
+void contarFolhas(ptrNo raiz, int &folhas){
+    if (!raiz) return;
+
+    if(!raiz->esq && !raiz->dir) { // se for folha, nao tiver filhos
+        folhas++;
+        return;
+    }
+
+    contarFolhas(raiz->esq, folhas);
+    contarFolhas(raiz->dir, folhas);
+}
+
+ptrNo criarNo(Point p, int id){
+    ptrNo novo = new No;
+    novo->p = p;
+    novo->id = id;
+    novo->esq = nullptr;
+    novo->dir = nullptr;
+    novo->pai = nullptr;
+    return novo;
+}
