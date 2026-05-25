@@ -149,12 +149,37 @@ int main (int argc, char* argv[]){
             continue;
         }
 
-        // 4. Inserir na árvore
+        //Inserir na árvore
         ptrNo novo_no = criarNo(p_novo, id_counter++, melhor_pai);
         if (!melhor_pai->esq) melhor_pai->esq = novo_no;
         else melhor_pai->dir = novo_no;
         todos_nos.push_back(novo_no);
     }
 
+    // saida
+    int folhas = 0;
+    contarFolhas(raiz, folhas);
+    
+    std::vector<Segment> finais;
+    coletarSegmentos(raiz, finais);
+    double comprimento_total = 0;
+    for (const auto& s : finais) comprimento_total += dist(s.a, s.b);
+
+    std::cout << "--- Estatísticas da Árvore ---" << std::endl;
+    std::cout << "Total de nós: " << id_counter << std::endl;
+    std::cout << "Número de folhas: " << folhas << std::endl;
+    std::cout << "Comprimento total: " << comprimento_total << std::endl;
+    std::cout << "Conexões rejeitadas: " << conexoes_rejeitadas << std::endl;
+
+    // Exportar CSV
+    std::ofstream file("arvore.csv");
+    file << "x1,y1,x2,y2\n";
+    for (const auto& s : finais) {
+        file << s.a.x << "," << s.a.y << "," << s.b.x << "," << s.b.y << "\n";
+    }
+    file.close();
+    std::cout << "Arquivo 'arvore.csv' gerado com sucesso." << std::endl;
+
+    return 0;
 
 }
