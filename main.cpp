@@ -24,105 +24,96 @@ typedef struct No {
 } No, *ptrNo;
 
 
-double dist(Point a, Point b){
-    return sqrt(pow(a.x - b.x, 2) + pow(a.y - b.y, 2));
+double dist(Point p1, Point p2) {
+    return std::sqrt(std::pow(p2.x - p1.x, 2) + std::pow(p2.y - p1.y, 2));
 }
 
-double orientation(Point a, Point b, Point c){
-    double val = (b.y - a.y) * (c.x - b.x) - (b.x - a.x) * (c.y - b.y);
-    if(fabs(val) < EPSILON) return 0; // considere que ele eh tao proximo de 0 que eh 0
-    if (val > 0) return 1; // esquerda
-    return -1; // direita - anti-horario
+double orient(Point a, Point b, Point c) {
+    return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
 }
 
-bool on_segment(Point p, Point q, Point r){
-    return (q.x <= fmax(p.x, r.x) && q.x >= fmin(p.x, r.x) &&
-            q.y <= fmax(p.y, r.y) && q.y >= fmin(p.y, r.y));
+bool onSegment(Point p, Point q, Point r) {
+    return q.x <= std::max(p.x, r.x) && q.x >= std::min(p.x, r.x) &&
+           q.y <= std::max(p.y, r.y) && q.y >= std::min(p.y, r.y);
 }
 
+bool doIntersect(Segment s1, Segment s2) {
+    Point a = s1.a, b = s1.b, c = s2.a, d = s2.b;
+    double o1 = orient(a, b, c);
+    double o2 = orient(a, b, d);
+    double o3 = orient(c, d, a);
+    double o4 = orient(c, d, b);
 
-bool segments_intersect(Segment p1, Segment q1){
-    double o1 = orientation(p1.a, p1.b, q1.a);
-    double o2 = orientation(p1.a, p1.b, q1.b);
-    double o3 = orientation(q1.a, q1.b, p1.a);
-    double o4 = orientation(q1.a, q1.b, p1.b);
-    
-    if (o1 != o2 && o3 != o4) return true;
-    
-    return false;
-    
+    if (((o1 > 0 && o2 < 0) || (o1 < 0 && o2 > 0)) &&
+        ((o3 > 0 && o4 < 0) || (o3 < 0 && o4 > 0))) return true;
+
+    return false; 
 }
 
 bool isInside(Point p, double R) {
     return (p.x * p.x + p.y * p.y) <= (R * R);
 }
 
-void coletarSegmentos(ptrNo raiz, std::vector<Segment> &segmentos){
 
+void coletarSegmentos(ptrNo raiz, std::vector<Segment>& segmentos) {
     if (!raiz) return;
-
-    if(raiz->esq) {
+    if (raiz->esq) {
         segmentos.push_back({raiz->p, raiz->esq->p});
         coletarSegmentos(raiz->esq, segmentos);
     }
-
-    if(raiz->dir) {
+    if (raiz->dir) {
         segmentos.push_back({raiz->p, raiz->dir->p});
         coletarSegmentos(raiz->dir, segmentos);
     }
-
 }
 
-void contarFolhas(ptrNo raiz, int &folhas){
+void contarFolhas(ptrNo raiz, int& folhas) {
     if (!raiz) return;
-
-    if(!raiz->esq && !raiz->dir) { // se for folha, nao tiver filhos
-        folhas++;
-        return;
-    }
-
+    if (!raiz->esq && !raiz->dir) folhas++;
     contarFolhas(raiz->esq, folhas);
     contarFolhas(raiz->dir, folhas);
 }
 
-ptrNo criarNo(Point p, int id){
+ptrNo criarNo(Point p, int id, ptrNo pai) {
     ptrNo novo = new No;
     novo->p = p;
     novo->id = id;
-    novo->esq = nullptr;
-    novo->dir = nullptr;
-    novo->pai = nullptr;
+    novo->pai = pai;
+    novo->esq = novo->dir = nullptr;
     return novo;
 }
 
-int main (int argc, char* argv[]){
+// --- Algoritmo Principal ---
+
+int main(int argc, char* argv[]) {
     if (argc < 3) {
         std::cerr << "Uso: " << argv[0] << " <Nterm> <Raio>" << std::endl;
         return 1;
     }
+
     int n_term = std::stoi(argv[1]);
     double R = std::stod(argv[2]);
     int conexoes_rejeitadas = 0;
     int id_counter = 0;
 
-
-    ptrNo raiz = criarNo({0, 0}, id_counter++);
+    // Inicialização da raiz
+    ptrNo raiz = criarNo({0.0, 0.0}, id_counter++, nullptr);
     std::vector<ptrNo> todos_nos = {raiz};
 
+    // Gerador de números aleatórios
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_real_distribution<double> dist_unif(0.0, 1.0);
 
-    for (int i = 0; i < n_term; i++){
+    for (int i = 0; i < n_term; ++i) {
         double r_rand = R * std::sqrt(dist_unif(gen));
-        double theta_rand = dist_unif(gen) * 2 * M_PI;
-        Point novo_ponto = {r_rand * cos(theta_rand), r_rand * sin(theta)};
-        // achar melhor conexao
+        double theta = dist_unif(gen) * 2.0 * M_PI;
+        Point p_novo = {r_rand * std::cos(theta), r_rand * std::sin(theta)};
+
         ptrNo melhor_pai = nullptr;
         double min_dist = 1e18;
-        
 
-        for  (auto no_cand : todos_nos){
+        for (auto no_cand : todos_nos) {
             double d = dist(no_cand->p, p_novo);
             if (d < min_dist) {
                 min_dist = d;
@@ -130,6 +121,7 @@ int main (int argc, char* argv[]){
             }
         }
 
+        // 3. Validar Restrições
         bool intercepta = false;
         Segment novo_seg = {melhor_pai->p, p_novo};
         
@@ -137,7 +129,7 @@ int main (int argc, char* argv[]){
         coletarSegmentos(raiz, segs_existentes);
 
         for (const auto& s : segs_existentes) {
-            if (segments_intersect(novo_seg, s)) {
+            if (doIntersect(novo_seg, s)) {
                 intercepta = true;
                 break;
             }
@@ -149,14 +141,12 @@ int main (int argc, char* argv[]){
             continue;
         }
 
-        //Inserir na árvore
         ptrNo novo_no = criarNo(p_novo, id_counter++, melhor_pai);
         if (!melhor_pai->esq) melhor_pai->esq = novo_no;
         else melhor_pai->dir = novo_no;
         todos_nos.push_back(novo_no);
     }
 
-    // saida
     int folhas = 0;
     contarFolhas(raiz, folhas);
     
@@ -181,5 +171,4 @@ int main (int argc, char* argv[]){
     std::cout << "Arquivo 'arvore.csv' gerado com sucesso." << std::endl;
 
     return 0;
-
 }
