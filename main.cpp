@@ -94,3 +94,67 @@ ptrNo criarNo(Point p, int id){
     novo->pai = nullptr;
     return novo;
 }
+
+int main (int argc, char* argv[]){
+    if (argc < 3) {
+        std::cerr << "Uso: " << argv[0] << " <Nterm> <Raio>" << std::endl;
+        return 1;
+    }
+    int n_term = std::stoi(argv[1]);
+    double R = std::stod(argv[2]);
+    int conexoes_rejeitadas = 0;
+    int id_counter = 0;
+
+
+    ptrNo raiz = criarNo({0, 0}, id_counter++);
+    std::vector<ptrNo> todos_nos = {raiz};
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<double> dist_unif(0.0, 1.0);
+
+    for (int i = 0; i < n_term; i++){
+        double r_rand = R * std::sqrt(dist_unif(gen));
+        double theta_rand = dist_unif(gen) * 2 * M_PI;
+        Point novo_ponto = {r_rand * cos(theta_rand), r_rand * sin(theta)};
+        // achar melhor conexao
+        ptrNo melhor_pai = nullptr;
+        double min_dist = 1e18;
+        
+
+        for  (auto no_cand : todos_nos){
+            double d = dist(no_cand->p, p_novo);
+            if (d < min_dist) {
+                min_dist = d;
+                melhor_pai = no_cand;
+            }
+        }
+
+        bool intercepta = false;
+        Segment novo_seg = {melhor_pai->p, p_novo};
+        
+        std::vector<Segment> segs_existentes;
+        coletarSegmentos(raiz, segs_existentes);
+
+        for (const auto& s : segs_existentes) {
+            if (segments_intersect(novo_seg, s)) {
+                intercepta = true;
+                break;
+            }
+        }
+
+        if (intercepta || (melhor_pai->esq && melhor_pai->dir) || min_dist < EPSILON) {
+            conexoes_rejeitadas++;
+            i--; // Tenta gerar outro ponto para cumprir Nterm
+            continue;
+        }
+
+        // 4. Inserir na árvore
+        ptrNo novo_no = criarNo(p_novo, id_counter++, melhor_pai);
+        if (!melhor_pai->esq) melhor_pai->esq = novo_no;
+        else melhor_pai->dir = novo_no;
+        todos_nos.push_back(novo_no);
+    }
+
+
+}
